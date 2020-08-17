@@ -1,0 +1,136 @@
+---
+title: Create to code data about tibble on `data/code_info`
+author: <a href = "https://lovetoken.github.io">lovetoken</a>
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    fig_height: 6
+    theme: yeti
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+    keep_md: no
+---
+
+```{r env, echo = F, warning = F, message = F}
+pacman::p_load(knitr, tidyverse, ggplot2, data.table, XML, magrittr, lubridate, dplyr)
+opts_chunk$set(fig.path = "output/figure/", fig.align = "center", out.width = "80%",
+               eval = F, warning = F, message = F)
+```
+
+# Create code RDS file
+
+## `bjd`
+
+법정동 코드를 의미합니다.
+
+### Download rawdata
+
+> [행정표준코드관리시스템](https://www.code.go.kr/) -> 법정동코드목록조회
+
+에서 수동으로 다운로드를 진행
+
+### Read rawdata
+
+```{r}
+bjd <- read_tsv("../data/rawdata/bjd.txt")
+bjd
+```
+
+### Normalization
+
+```{r}
+bjd_res <- bjd %>% 
+  dplyr::filter(폐지여부 == "존재") %>% 
+  select(-폐지여부) %>% 
+  mutate(loadingtime = now())
+```
+
+### Save RDS
+
+```{r}
+saveRDS(bjd_res, "../data/code_info/bjd.rds")
+```
+
+### ETC
+
+## `zip`
+
+한국 우편번호를 정리합니다.
+
+### Download rawdata
+
+> [우편번호 DB](https://www.epost.go.kr/search/zipcode/areacdAddressDown.jsp) 
+
+```{r}
+download.file("https://www.epost.go.kr/search/areacd/zipcode_DB.zip", "../data/rawdata/zip/zipcode_DB.zip")
+# unzip("data/rawdata/zip/zipcode_DB.zip") # 한글파일명으로 인한 압축해제 에러
+```
+
+### Read rawdata
+
+```{r}
+lf <- list.files("../data/rawdata/zip/zipcode_DB/", full.names = T, pattern = ".txt")
+zip <- lf %>% 
+  map_df(~ read_delim(.x, delim = "|", col_types = "cccccccccccddccccccccdcdcc")) # `col_types` 고정스키마 없이 타입추론으로 읽어들일 경우 에러벌생 됨
+```
+
+### Normalization
+
+```{r}
+zip_res <- zip %>% 
+  mutate(loadingtime = now())
+```
+
+### Save RDS
+
+```{r}
+saveRDS(zip_res, "../data/code_info/zip.rds")
+```
+
+### ETC
+
+rawdata 가 고용량인 관계로 지움
+
+```{r}
+unlink("../data/rawdata/zip/", recursive = T)
+```
+
+# `get_kcode_list()` 로 반환되는 코드메타정보 테이블 작성
+
+## RDS 파일별 `max_loadingtime` 값 최신화
+
+```{r}
+object_name <- list.files("data/code_info/", pattern = ".rds") %>%
+  gsub(".rds", "", .)
+
+code_rds_path <- list.files("data/code_info/", pattern = ".rds", full.names = T)
+
+df_loadingtime <- code_rds_path %>%
+  map_df(
+    ~ readRDS(file = .x) %>% 
+        select(loadingtime) %>% 
+        summarise(min_loadingtime = min(loadingtime), max_loadingtime = max(loadingtime))
+  )
+
+get_kcode_list1 <- tibble(
+  object = object_name,
+  df_loadingtime
+)
+```
+
+## 디스크립션 및 출처 정리
+
+```{r}
+get_kcode_list2 <- tribble(
+  ~object, ~desc,           ~ref,
+  "bjd",   "법정동코드",    "https://www.code.go.kr/",
+  "zip",   "한국우편번호",  "https://www.epost.go.kr/search/zipcode/areacdAddressDown.jsp"
+)
+
+get_kcode_list <- get_kcode_list2 %>% 
+  left_join(get_kcode_list1, by = "object")
+
+saveRDS(get_kcode_list, "../data/get_kcode_list.rds")
+```
+

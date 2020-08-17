@@ -6,14 +6,7 @@
 
 get_kcode_list <- function(){
 
-  d <- tibble(
-    code_rds_path = list.files("data/code_info/", pattern = ".rds", full.names = T)
-  )
-
-  d %>%
-
-
-
+  d <- readRDS("data/get_kcode_list.rds")
   return(d)
 
 }

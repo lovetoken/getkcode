@@ -25,10 +25,23 @@ theme_set(theme_bw(base_family = "AppleGothic"))
 
 ## Getting start
 
+패키지를 설치 후 로드합니다.
+
+```{r eval = F}
+devtools::install_github("lovetoken/getkcode")
+library("getkcode")
+```
+
 `get_kcode()` 함수를 이용하여 특정 코드를 데이터프레임(tibble 형) 으로 반환할 수 있습니다.
 
 ```{r eval = F}
 d <- get_kcode("bjd")
 d
+```
+
+어떤 코드들을 위와 같은 방식으로 불러올 수 있는지 확인하고 싶다면 `get_kcode_list()` 함수를 이용합니다.
+
+```{r}
+get_kcode_list()
 ```
 
