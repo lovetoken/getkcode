@@ -13,11 +13,9 @@ output:
 ---
 
 ```{r echo = F, warning = F, message = F}
-pacman::p_load(knitr)
+pacman::p_load(knitr, getkcode)
 theme_set(theme_bw(base_family = "AppleGothic"))
 ```
-
-![](https://i1.wp.com/whiterivernow.com/wp-content/uploads/2018/12/Under-Construction-Sign.png?fit=1230%2C580&ssl=1)
 
 ## `getkcode` R package
 
@@ -34,8 +32,8 @@ library("getkcode")
 
 `get_kcode()` 함수를 이용하여 특정 코드를 데이터프레임(tibble 형) 으로 반환할 수 있습니다.
 
-```{r eval = F}
-d <- get_kcode("bjd")
+```{r}
+d <- get_kcode("bjd") # 법정동 코드 호출
 d
 ```
 

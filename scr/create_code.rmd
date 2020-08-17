@@ -63,6 +63,7 @@ saveRDS(bjd_res, "../data/code_info/bjd.rds")
 > [우편번호 DB](https://www.epost.go.kr/search/zipcode/areacdAddressDown.jsp) 
 
 ```{r}
+dir.create("../data/rawdata/zip")
 download.file("https://www.epost.go.kr/search/areacd/zipcode_DB.zip", "../data/rawdata/zip/zipcode_DB.zip")
 # unzip("data/rawdata/zip/zipcode_DB.zip") # 한글파일명으로 인한 압축해제 에러
 ```

@@ -1594,14 +1594,15 @@ bjd</code></pre>
 <blockquote>
 <p><a href="https://www.epost.go.kr/search/zipcode/areacdAddressDown.jsp">우편번호 DB</a></p>
 </blockquote>
-<pre class="r"><code>download.file(&quot;https://www.epost.go.kr/search/areacd/zipcode_DB.zip&quot;, &quot;../data/rawdata/zip/zipcode_DB.zip&quot;)
+<pre class="r"><code>dir.create(&quot;../data/rawdata/zip&quot;)
+download.file(&quot;https://www.epost.go.kr/search/areacd/zipcode_DB.zip&quot;, &quot;../data/rawdata/zip/zipcode_DB.zip&quot;)
 # unzip(&quot;data/rawdata/zip/zipcode_DB.zip&quot;) # 한글파일명으로 인한 압축해제 에러</code></pre>
 </div>
 <div id="read-rawdata-1" class="section level3">
 <h3>Read rawdata</h3>
 <pre class="r"><code>lf &lt;- list.files(&quot;../data/rawdata/zip/zipcode_DB/&quot;, full.names = T, pattern = &quot;.txt&quot;)
 zip &lt;- lf %&gt;% 
-  map_df(~ read_delim(.x, delim = &quot;|&quot;, col_types = &quot;cccccccccccddccccccccdcdcc&quot;)) # 타입추론으로 읽어들일 경우 에러벌생 됨</code></pre>
+  map_df(~ read_delim(.x, delim = &quot;|&quot;, col_types = &quot;cccccccccccddccccccccdcdcc&quot;)) # `col_types` 고정스키마 없이 타입추론으로 읽어들일 경우 에러벌생 됨</code></pre>
 </div>
 <div id="normalization-1" class="section level3">
 <h3>Normalization</h3>
@@ -1621,18 +1622,38 @@ zip &lt;- lf %&gt;%
 </div>
 <div id="get_kcode_list-로-반환되는-코드메타정보-테이블-작성" class="section level1">
 <h1><code>get_kcode_list()</code> 로 반환되는 코드메타정보 테이블 작성</h1>
+<div id="rds-파일별-max_loadingtime-값-최신화" class="section level2">
+<h2>RDS 파일별 <code>max_loadingtime</code> 값 최신화</h2>
 <pre class="r"><code>object_name &lt;- list.files(&quot;data/code_info/&quot;, pattern = &quot;.rds&quot;) %&gt;%
   gsub(&quot;.rds&quot;, &quot;&quot;, .)
 
 code_rds_path &lt;- list.files(&quot;data/code_info/&quot;, pattern = &quot;.rds&quot;, full.names = T)
 
-max_loadingtime &lt;- code_rds_path %&gt;%
-  map_df(~ readRDS(file = .x) %&gt;% select(loadingtime) %&gt;% summarise(loadingtime = max(loadingtime)))
+df_loadingtime &lt;- code_rds_path %&gt;%
+  map_df(
+    ~ readRDS(file = .x) %&gt;% 
+        select(loadingtime) %&gt;% 
+        summarise(min_loadingtime = min(loadingtime), max_loadingtime = max(loadingtime))
+  )
 
-d &lt;- tibble(
+get_kcode_list1 &lt;- tibble(
   object = object_name,
-  max_loadingtime
+  df_loadingtime
 )</code></pre>
+</div>
+<div id="디스크립션-및-출처-정리" class="section level2">
+<h2>디스크립션 및 출처 정리</h2>
+<pre class="r"><code>get_kcode_list2 &lt;- tribble(
+  ~object, ~desc,           ~ref,
+  &quot;bjd&quot;,   &quot;법정동코드&quot;,    &quot;https://www.code.go.kr/&quot;,
+  &quot;zip&quot;,   &quot;한국우편번호&quot;,  &quot;https://www.epost.go.kr/search/zipcode/areacdAddressDown.jsp&quot;
+)
+
+get_kcode_list &lt;- get_kcode_list2 %&gt;% 
+  left_join(get_kcode_list1, by = &quot;object&quot;)
+
+saveRDS(get_kcode_list, &quot;../data/get_kcode_list.rds&quot;)</code></pre>
+</div>
 </div>
 
 
